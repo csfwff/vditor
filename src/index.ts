@@ -213,6 +213,88 @@ class Vditor {
             localStorage.removeItem("vditor" + this.vditor.id);
         }
     }
+
+    public undo(){
+        this.vditor.undo.undo(this.vditor)
+    }
+
+    public redo(){
+        this.vditor.undo.redo(this.vditor)
+    }
+
+    public setBold(){
+        insertText(this.vditor, "**", "**", false, true);
+    }
+
+    public setH1(){
+        insertText(this.vditor, "# ", "", false, true);
+    }
+
+    public setH2(){
+        insertText(this.vditor, "## ", "", false, true);
+    }
+
+    public setH3(){
+        insertText(this.vditor, "### ", "", false, true);
+    }
+
+    public setH4(){
+        insertText(this.vditor, "#### ", "", false, true);
+    }
+
+    public setH5(){
+        insertText(this.vditor, "##### ", "", false, true);
+    }
+
+    public setH6(){
+        insertText(this.vditor, "###### ", "", false, true);
+    }
+
+    public setItalic(){
+        insertText(this.vditor, "*", "*", false, true);
+    }
+
+    public setStrike(){
+        insertText(this.vditor, "~~", "~~", false, true)
+    }
+
+    public setLine(){
+        insertText(this.vditor, "---", "", false, true)
+    }
+
+    public setQuote(){
+        insertText(this.vditor, "> ", "", false, true)
+    }
+
+    public setList(){
+        insertText(this.vditor, "* ", "", false, true)
+    }
+
+    public setOrdered(){
+        insertText(this.vditor, "1. ", "", false, true)
+    }
+
+    public setCheck(){
+        insertText(this.vditor, "* [ ] ", "", false, true)
+    }
+
+    public setCode(){
+        insertText(this.vditor, "```\n", "\n```", false, true)
+    }
+
+    public setInlineCode(){
+        insertText(this.vditor, "`", "`", false, true)
+    }
+
+    public setLink(){
+        insertText(this.vditor, "[", "](https://)", false, true)
+    }
+
+    public setTable(){
+        insertText(this.vditor, "| col1", " | col2 | col3 |\n| --- | --- | --- |\n|  |  |  |\n|  |  |  |", false, true)
+    }
+
+    
 }
 
 export default Vditor;
