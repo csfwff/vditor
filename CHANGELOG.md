@@ -7,6 +7,7 @@
   * `md2html` 静态方法参数修改为 `(mdText: string, options?: IPreviewOptions)`
   * `mathRender` 参数修改为 `(element: HTMLElement)`
   * `preview.hljs.style` 默认值修改为 `github`，可选值参见[chroma](https://xyproto.github.io/splash/docs/longer/all.html)
+  * 添加 `typewriterMode` 配置，默认值为 false。1.7 版本用户需要手动开启该功能
 * v1.7
   * `option.preivew.show?: boolean` => `option.preivew.mode?: string`
   * 移除 `option.editorName`
@@ -15,8 +16,10 @@
 
 * [121](https://github.com/b3log/vditor/issues/121) 所见即所得 `feature`
 
-### v1.8.15 / 2019-10-04
+### v1.8.16 / 2019-10-08
 
+* [144](https://github.com/b3log/vditor/issues/144) 编辑器内容为空时，placeholder 不显示 `bug`
+* [143](https://github.com/b3log/vditor/issues/143) 为编辑器底部空白添加配置项 `enhancement`
 * [142](https://github.com/b3log/vditor/issues/142) setPreviewMode 方法失效 `bug`
 * [141](https://github.com/b3log/vditor/issues/141) Safari 中代码块换行 `bug`
 * [140](https://github.com/b3log/vditor/issues/140) Scroll to the cursor position after pasting `bug`

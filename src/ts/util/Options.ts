@@ -175,6 +175,7 @@ export class Options {
         }, {
             name: "br",
         }],
+        typewriterMode: false,
         upload: {
             filename: (name: string) => name.replace(/\W/g, ""),
             linkToImgUrl: "",

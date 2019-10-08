@@ -42,7 +42,7 @@ interface ILute {
 
     VditorDOMMarkdown(html: string): string[];
 
-    VditorNewline(ntype: string): string[];
+    VditorNewline(ntype: string, param?: object): string[];
 
     // SpinVditorDOM(html: string): string[];
 }
@@ -152,6 +152,7 @@ interface IPreviewOptions {
 }
 
 interface IOptions {
+    typewriterMode?: boolean;
     keymap?: { [key: string]: string };
     height?: number | string;
     width?: number | string;
@@ -235,6 +236,7 @@ interface IVditor {
     };
     wysiwyg: {
         element: HTMLElement,
+        setExpand(): void,
     };
 }
 
