@@ -1,9 +1,11 @@
 import editSVG from "../../assets/icons/edit.svg";
 import {formatRender} from "../editor/formatRender";
-import {getText} from "../editor/getText";
-import {getEventName} from "../util/getEventName";
+import {getEventName} from "../util/compatibility";
+import {getMarkdown} from "../util/getMarkdown";
 import {renderDomByMd} from "../wysiwyg/renderDomByMd";
+import {enableToolbar} from "./enableToolbar";
 import {MenuItem} from "./MenuItem";
+import {removeCurrentToolbar} from "./removeCurrentToolbar";
 
 export class WYSIWYG extends MenuItem {
     constructor(vditor: IVditor, menuItem: IMenuItem) {
@@ -23,9 +25,12 @@ export class WYSIWYG extends MenuItem {
 
     public _bindEvent(vditor: IVditor) {
         this.element.children[0].addEventListener(getEventName(), function(event) {
-            if (this.className.indexOf("vditor-menu--current") > -1) {
-                this.className = this.className.replace(" vditor-menu--current", "");
-                vditor.wysiwyg.element.style.display = "none";
+            if (this.classList.contains("vditor-menu--disabled")) {
+                return;
+            }
+            if (this.classList.contains("vditor-menu--current")) {
+                this.classList.remove("vditor-menu--current");
+                vditor.wysiwyg.element.parentElement.style.display = "none";
                 if (vditor.currentPreviewMode === "both") {
                     vditor.editor.element.style.display = "block";
                     vditor.preview.element.style.display = "block";
@@ -43,15 +48,21 @@ export class WYSIWYG extends MenuItem {
                 if (vditor.toolbar.elements.preview) {
                     vditor.toolbar.elements.preview.style.display = "block";
                 }
-                const wysiwygHTML = vditor.lute.VditorDOMMarkdown(vditor.wysiwyg.element.innerHTML);
-                formatRender(vditor, wysiwygHTML[0] || wysiwygHTML[1], undefined, false);
-
+                const wysiwygMD = getMarkdown(vditor);
                 vditor.currentMode = "markdown";
+                formatRender(vditor, wysiwygMD, undefined);
+                vditor.editor.element.focus();
+
+                removeCurrentToolbar(vditor.toolbar.elements,  ["headings", "bold", "italic", "strike", "line", "quote",
+                    "list", "ordered-list", "check", "code", "inline-code", "upload", "link", "table", "record"]);
+                enableToolbar(vditor.toolbar.elements,
+                    ["headings", "bold", "italic", "strike", "line", "quote",
+                        "list", "ordered-list", "check", "code", "inline-code", "upload", "link", "table", "record"]);
             } else {
-                this.className = this.className + " vditor-menu--current";
+                this.classList.add("vditor-menu--current");
                 vditor.editor.element.style.display = "none";
                 vditor.preview.element.style.display = "none";
-                vditor.wysiwyg.element.style.display = "block";
+                vditor.wysiwyg.element.parentElement.style.display = "block";
 
                 if (vditor.toolbar.elements.format) {
                     vditor.toolbar.elements.format.style.display = "none";
@@ -62,8 +73,11 @@ export class WYSIWYG extends MenuItem {
                 if (vditor.toolbar.elements.preview) {
                     vditor.toolbar.elements.preview.style.display = "none";
                 }
-                renderDomByMd(vditor, getText(vditor.editor.element));
+                const editorMD = getMarkdown(vditor);
                 vditor.currentMode = "wysiwyg";
+                renderDomByMd(vditor, editorMD);
+                vditor.wysiwyg.element.focus();
+                vditor.wysiwyg.popover.style.display = "none";
             }
 
             if (vditor.hint) {
@@ -75,7 +89,7 @@ export class WYSIWYG extends MenuItem {
             if (vditor.toolbar.elements.emoji) {
                 (vditor.toolbar.elements.emoji.children[1] as HTMLElement).style.display = "none";
             }
-            if (vditor.devtools &&  vditor.devtools.ASTChart && vditor.devtools.element.style.display === "block") {
+            if (vditor.devtools && vditor.devtools.ASTChart && vditor.devtools.element.style.display === "block") {
                 vditor.devtools.ASTChart.resize();
             }
 

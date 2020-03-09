@@ -1,7 +1,7 @@
 import recordSVG from "../../assets/icons/record.svg";
 import {i18n} from "../i18n/index";
 import {uploadFiles} from "../upload/index";
-import {getEventName} from "../util/getEventName";
+import {getEventName} from "../util/compatibility";
 import {MediaRecorder} from "../util/MediaRecorder";
 import {MenuItem} from "./MenuItem";
 
@@ -16,6 +16,11 @@ export class Record extends MenuItem {
     public _bindEvent(vditor: IVditor) {
         let mediaRecorder: MediaRecorder;
         this.element.children[0].addEventListener(getEventName(), (event) => {
+            if (this.element.firstElementChild.classList.contains("vditor-menu--disabled")) {
+                return;
+            }
+            event.preventDefault();
+            const editorElement = vditor.currentMode === "wysiwyg" ? vditor.wysiwyg.element : vditor.editor.element;
             if (!mediaRecorder) {
                 navigator.mediaDevices.getUserMedia({audio: true}).then((mediaStream: MediaStream) => {
                     mediaRecorder = new MediaRecorder(mediaStream);
@@ -32,7 +37,8 @@ export class Record extends MenuItem {
                     };
                     mediaRecorder.startRecordingNewWavFile();
                     vditor.tip.show(i18n[vditor.options.lang].recording);
-                    vditor.editor.element.setAttribute("contenteditable", "false");
+                    editorElement.setAttribute("contenteditable", "false");
+                    this.element.children[0].classList.add("vditor-menu--current");
                 }).catch(() => {
                     vditor.tip.show(i18n[vditor.options.lang]["record-tip"]);
                 });
@@ -45,12 +51,13 @@ export class Record extends MenuItem {
                 const file: File = new File([mediaRecorder.buildWavFileBlob()],
                     `record${(new Date()).getTime()}.wav`, {type: "video/webm"});
                 uploadFiles(vditor, [file]);
+                this.element.children[0].classList.remove("vditor-menu--current");
             } else {
                 vditor.tip.show(i18n[vditor.options.lang].recording);
-                vditor.editor.element.setAttribute("contenteditable", "false");
+                editorElement.setAttribute("contenteditable", "false");
                 mediaRecorder.startRecordingNewWavFile();
+                this.element.children[0].classList.add("vditor-menu--current");
             }
-            event.preventDefault();
         });
     }
 }

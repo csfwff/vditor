@@ -1,24 +1,25 @@
-import {abcRender} from "../markdown/abcRender";
-import {chartRender} from "../markdown/chartRender";
-import {codeRender} from "../markdown/codeRender";
-import {highlightRender} from "../markdown/highlightRender";
-import {mathRender} from "../markdown/mathRender";
-import {mediaRender} from "../markdown/mediaRender";
-import {mermaidRender} from "../markdown/mermaidRender";
-import {setRange} from "./setRange";
+import {enableToolbar} from "../toolbar/enableToolbar";
+import {removeCurrentToolbar} from "../toolbar/removeCurrentToolbar";
+import {afterRenderEvent} from "./afterRenderEvent";
+import {processCodeRender} from "./processCodeRender";
 
-export const renderDomByMd = (vditor: IVditor, md: string) => {
-    const domHTML = vditor.lute.RenderVditorDOM(md, md.length, md.length);
-    console.log(domHTML[0], md, md.length, md.length);
-    const blockElement = vditor.wysiwyg.element;
-    blockElement.innerHTML = domHTML[0] || domHTML[1];
-    setRange(blockElement);
-    codeRender(blockElement, vditor.options.lang);
-    highlightRender(vditor.options.preview.hljs.style, vditor.options.preview.hljs.enable,
-        blockElement);
-    mathRender(blockElement);
-    mermaidRender(blockElement);
-    chartRender(blockElement);
-    abcRender(blockElement);
-    mediaRender(blockElement);
+export const renderDomByMd = (vditor: IVditor, md: string, enableInput = true) => {
+    const allToolbar = ["headings", "bold", "italic", "strike", "line", "quote",
+        "list", "ordered-list", "check", "code", "inline-code", "upload", "link", "table", "record"];
+    removeCurrentToolbar(vditor.toolbar.elements, allToolbar);
+    enableToolbar(vditor.toolbar.elements, allToolbar);
+
+    const editorElement = vditor.wysiwyg.element;
+    editorElement.innerHTML = vditor.lute.Md2VditorDOM(md);
+
+    editorElement.querySelectorAll(".vditor-wysiwyg__block").forEach((blockElement: HTMLElement) => {
+        processCodeRender(blockElement, vditor);
+        blockElement.firstElementChild.setAttribute("style", "display:none");
+    });
+
+    afterRenderEvent(vditor, {
+        enableAddUndoStack: true,
+        enableHint: false,
+        enableInput,
+    });
 };

@@ -1,23 +1,19 @@
+import {getMarkdown} from "../util/getMarkdown";
 import {formatRender} from "./formatRender";
 import {getSelectPosition} from "./getSelectPosition";
-import {getText} from "./getText";
 import {selectIsEditor} from "./selectIsEditor";
 
 export const insertText = (vditor: IVditor, prefix: string, suffix: string, replace: boolean = false,
                            toggle: boolean = false) => {
     let range: Range = window.getSelection().rangeCount === 0 ? undefined : window.getSelection().getRangeAt(0);
     if (!selectIsEditor(vditor.editor.element)) {
-        if (vditor.editor.range) {
-            range = vditor.editor.range;
-        } else {
-            range = vditor.editor.element.ownerDocument.createRange();
-            range.setStart(vditor.editor.element, 0);
-            range.collapse(true);
-        }
+        range = vditor.editor.element.ownerDocument.createRange();
+        range.setStart(vditor.editor.element, 0);
+        range.collapse(true);
     }
 
     const position = getSelectPosition(vditor.editor.element, range);
-    const content = getText(vditor.editor.element);
+    const content = getMarkdown(vditor);
 
     // select none || select something and need replace
     if (range.collapsed || (!range.collapsed && replace)) {

@@ -1,17 +1,21 @@
 import {formatRender} from "../editor/formatRender";
 import {getSelectPosition} from "../editor/getSelectPosition";
-import {getText} from "../editor/getText";
-import {selectIsEditor} from "../editor/selectIsEditor";
+import {setSelectionFocus} from "../editor/setSelection";
 import {code160to32} from "../util/code160to32";
+import {getMarkdown} from "../util/getMarkdown";
+import {hasClosestByClassName} from "../util/hasClosest";
+import {afterRenderEvent} from "../wysiwyg/afterRenderEvent";
+import {insertHTML} from "../wysiwyg/insertHTML";
+import {processCodeRender} from "../wysiwyg/processCodeRender";
 import {getCursorPosition} from "./getCursorPosition";
 
 export class Hint {
     public timeId: number;
-    public element: HTMLUListElement;
+    public element: HTMLDivElement;
 
     constructor() {
         this.timeId = -1;
-        this.element = document.createElement("ul");
+        this.element = document.createElement("div");
         this.element.className = "vditor-hint";
     }
 
@@ -21,9 +25,14 @@ export class Hint {
         }
         const position = getSelectPosition(vditor.currentMode === "wysiwyg" ?
             vditor.wysiwyg.element : vditor.editor.element);
-        const currentLineValue = vditor.currentMode === "wysiwyg" ?
-            getSelection().getRangeAt(0).startContainer.textContent.split("\n")[0] :
-            getText(vditor.editor.element).substring(0, position.end).split("\n").slice(-1).pop();
+        let currentLineValue: string;
+        if (vditor.currentMode === "wysiwyg") {
+            const range = getSelection().getRangeAt(0);
+            currentLineValue = range.startContainer.textContent.substring(0, range.startOffset) || "";
+        } else {
+            currentLineValue = getMarkdown(vditor)
+                .substring(0, position.end).split("\n").slice(-1).pop();
+        }
 
         let key = this.getKey(currentLineValue, ":");
         let isAt = false;
@@ -74,16 +83,28 @@ export class Hint {
 
         const value = element.getAttribute("data-value");
         const splitChar = value.indexOf("@") === 0 ? "@" : ":";
+        const range: Range = window.getSelection().getRangeAt(0);
 
         if (vditor.currentMode === "wysiwyg") {
-            // TODO wysiwyg
-        } else {
-            let range: Range = window.getSelection().getRangeAt(0);
-            if (!selectIsEditor(vditor.editor.element, range)) {
-                range = vditor.editor.range;
+            range.setStart(range.startContainer, range.startContainer.textContent.lastIndexOf(splitChar));
+            range.deleteContents();
+            if (value.indexOf(":") > -1) {
+                insertHTML(vditor.lute.SpinVditorDOM(value), vditor);
+                range.insertNode(document.createTextNode(" "));
+            } else {
+                range.insertNode(document.createTextNode(value));
             }
+            range.collapse(false);
+            setSelectionFocus(range);
+
+            const blockRenderElement = hasClosestByClassName(range.startContainer, "vditor-wysiwyg__block");
+            if (blockRenderElement) {
+                processCodeRender(blockRenderElement, vditor);
+            }
+            afterRenderEvent(vditor);
+        } else {
             const position = getSelectPosition(vditor.editor.element, range);
-            const text = getText(vditor.editor.element);
+            const text = getMarkdown(vditor);
             const preText = text.substring(0, text.substring(0, position.start).lastIndexOf(splitChar));
             formatRender(vditor, preText + value + text.substring(position.start),
                 {
@@ -139,7 +160,8 @@ export class Hint {
                     html = html.substr(0, lastIndex) + replaceHtml;
                 }
             }
-            hintsHTML += `<li data-value="${hintData.value} " class="${i || "vditor-hint--current"}"> ${html}</li>`;
+            hintsHTML += `<button data-value="${hintData.value} "
+${i === 0 ? "class='vditor-hint--current'" : ""}> ${html}</button>`;
         });
 
         this.element.innerHTML = hintsHTML;
@@ -149,9 +171,10 @@ export class Hint {
         this.element.style.left = `${x}px`;
         this.element.style.display = "block";
 
-        this.element.querySelectorAll("li").forEach((element) => {
-            element.addEventListener("click", () => {
+        this.element.querySelectorAll("button").forEach((element) => {
+            element.addEventListener("click", (event) => {
                 this.fillEmoji(element, vditor);
+                event.preventDefault();
             });
         });
         // hint 展现在上部

@@ -25,34 +25,44 @@
     <meta property="og:locale" content="zh-cmn-Hans"/>
     <meta property="og:title" content="Vditor - A markdown editor written in TypeScript."/>
     <meta property="og:site_name" content="Blog-vditor"/>
-    <meta property="og:url" content="https://github.com/b3log/vditor"/>
+    <meta property="og:url" content="https://hacpai.com/tag/vditor"/>
     <meta name="twitter:card" content="summary"/>
     <meta name="twitter:domain" content="b3log.org"/>
     <meta name="twitter:title" property="og:title" itemprop="b3lig vditor"
           content="Vditor - A markdown editor written in TypeScript."/>
     <meta name="twitter:site" content="@B3logOS"/>
-    <meta name="twitter:url" content="https://github.com/b3log/vditor"/>
+    <meta name="twitter:url" content="https://hacpai.com/tag/vditor"/>
     <meta property="og:image" content="https://cdn.jsdelivr.net/npm/vditor/dist/images/logo.png"/>
     <meta name="twitter:image" content="https://cdn.jsdelivr.net/npm/vditor/dist/images/logo.png"/>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vditor@latest/dist/index.classic.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vditor@latest/dist/index.css"/>
     <script src="https://cdn.jsdelivr.net/npm/vditor@latest/dist/index.min.js"></script>
 </head>
 <body>
 <h2><a href="https://hacpai.com/article/1549638745630?r=Vanessa" target="_blank">Doc</a></h2>
-<h2><a href="static-preview.html">Vditor for Preview</a></h2>
-<h2>Vditor for you</h2>
+<h2>
+    Vditor for preview
+    <a href="static-preview.html?lang=zh_CN">中文</a>
+    <a href="static-preview.html?lang=ko_KR">한글</a>
+</h2>
+<h2>
+    Vditor for you
+    <button onclick="vditor.setTheme('dark')">Dark</button>
+    <button onclick="vditor.setTheme('light')">Light</button>
+</h2>
 <div id="vditor">
-    <h1>Vditor</h1>
-    <ul>
-        <li>foo</li>
-        <li>bar</li>
-    </ul>
+<h1>Vditor</h1>
+<ul>
+<li>foo</li>
+<li>bar</li>
+</ul>
 </div>
 <script>
   const vditor = new Vditor('vditor', {
+    debugger: true,
     typewriterMode: true,
+    placeholder: 'placeholder',
     counter: 100,
-    height: 300,
+    height: 500,
     hint: {
       emojiPath: 'https://cdn.jsdelivr.net/npm/vditor@1.8.3/dist/images/emoji',
       emojiTail: '<a href="https://hacpai.com/settings/function" target="_blank">设置常用表情</a>',
@@ -63,7 +73,7 @@
     },
     tab: '\t',
     upload: {
-      accept: 'image/*,.wav',
+      accept: 'image/*,.mp3, .wav, .rar',
       token: 'test',
       url: '/api/upload/editor',
       linkToImgUrl: '/api/upload/fetch',
@@ -72,7 +82,7 @@
           replace(/[\?\\/:|<>\*\[\]\(\)\$%\{\}@~]/g, '').
           replace('/\\s/g', '')
       },
-    }
+    },
   })
 </script>
 </body>

@@ -2,68 +2,98 @@ declare module "*.svg";
 
 declare module "*.png";
 
-declare module "highlight.js";
+declare const Lute: ILute;
 
-declare module "mermaid";
-
-declare module "abcjs/src/api/abc_tunebook_svg";
-
-declare module "katex";
-declare module "katex/contrib/auto-render/auto-render";
-
-declare module "turndown";
-
-interface ITurndown {
-    addRule(key: string, rule: ITurndownRule): ITurndown;
-}
-
-interface ITurndownRule {
-    filter: string | string[] | ((node: HTMLInputElement) => boolean);
-
-    replacement(content: string, node?: HTMLElement): string;
+interface ILuteRender {
+    renderLinkDest: (node: {
+        TokensStr: () => string;
+        __internal_object__: {
+            Parent: {
+                Type: number,
+            },
+        }
+    },               entering: boolean) => [string, number];
 }
 
 interface ILute {
+    WalkStop: number;
+
     New(): ILute;
+
+    SetJSRenderers(options?: {
+        renderers: {
+            HTML2VditorDOM?: ILuteRender,
+            HTML2Md?: ILuteRender,
+        },
+    }): void;
+
+    SetHeadingAnchor(enable: boolean): void;
+
+    SetInlineMathAllowDigitAfterOpenMarker(enable: boolean): void;
+
+    SetToC(enable: boolean): void;
+
+    SetAutoSpace(enable: boolean): void;
+
+    SetChinesePunct(enable: boolean): void;
+
+    SetFixTermTypo(enable: boolean): void;
 
     SetEmojiSite(emojiSite: string): void;
 
     PutEmojis(emojis: { [key: string]: string }): void;
 
-    MarkdownStr(error: string, text: string): string[];
-
     GetEmojis(): { [key: string]: string };
 
-    FormatStr(error: string, text: string): string[];
+    FormatMd(markdown: string): string;
 
-    RenderEChartsJSON(text: string): string[];
+    // debugger md
+    RenderEChartsJSON(text: string): string;
 
-    RenderVditorDOM(text: string, start: number, end: number): string[];
+    // md 转换为 html
+    Md2HTML(markdown: string): string;
 
-    VditorDOMMarkdown(html: string): string[];
+    // 粘贴时将 html 转换为 md
+    HTML2Md(html: string): string;
 
-    VditorNewline(ntype: string, param?: object): string[];
+    // wysiwyg 转换为 html
+    VditorDOM2HTML(vhtml: string): string;
 
-    // SpinVditorDOM(html: string): string[];
+    // wysiwyg 输入渲染
+    SpinVditorDOM(html: string): string;
+
+    // 粘贴时将 html 转换为 wysiwyg
+    HTML2VditorDOM(html: string): string;
+
+    // 将 wysiwyg 转换为 md
+    VditorDOM2Md(html: string): string;
+
+    // 将 md 转换为 wysiwyg
+    Md2VditorDOM(markdown: string): string;
 }
 
-declare var webkitAudioContext: {
+declare const webkitAudioContext: {
     prototype: AudioContext
     new(contextOptions?: AudioContextOptions): AudioContext,
 };
 
 interface IHTMLInputEvent extends Event {
     target: HTMLInputElement & EventTarget;
+    screenX: number;
     isComposing: boolean;
+    inputType: string;
+    key: string;
 }
 
 interface II18nLang {
     en_US: string;
+    ko_KR: string;
     zh_CN: string;
 }
 
 interface II18n {
     en_US: { [key: string]: string };
+    ko_KR: { [key: string]: string };
     zh_CN: { [key: string]: string };
 }
 
@@ -77,6 +107,8 @@ interface IUpload {
     linkToImgUrl?: string;
     token?: string;
     accept?: string;
+    withCredentials?: boolean;
+    headers?: { [key: string]: string };
 
     success?(editor: HTMLPreElement, msg: string): void;
 
@@ -89,6 +121,8 @@ interface IUpload {
     handler?(files: File[]): string | null;
 
     format?(files: File[], responseText: string): string;
+
+    file?(files: File[]): File[];
 }
 
 interface IMenuItem {
@@ -100,7 +134,7 @@ interface IMenuItem {
     prefix?: string;
     tipPosition?: string;
 
-    click?(): void;
+    click?(status?: boolean): void;
 }
 
 interface IPreviewMode {
@@ -109,17 +143,54 @@ interface IPreviewMode {
     editor: string;
 }
 
+interface IHljs {
+    lineNumber?: boolean;
+    style?: string;
+    enable?: boolean;
+}
+
+interface IMath {
+    inlineDigit: boolean;
+    macros: object;
+    engine: "KaTeX" | "MathJax";
+}
+
+interface IMarkdownConfig  {
+    autoSpace?: boolean;
+    fixTermTypo?: boolean;
+    chinesePunct?: boolean;
+    toc?: boolean;
+}
+
 interface IPreview {
     delay?: number;
     maxWidth?: number;
     mode?: keyof IPreviewMode;
     url?: string;
-    hljs?: {
-        style?: string,
-        enable?: boolean,
-    };
+    hljs?: IHljs;
+    math?: IMath;
+    markdown?: IMarkdownConfig;
 
     parse?(element: HTMLElement): void;
+
+    transform?(html: string): string;
+}
+
+interface IPreviewOptions {
+    theme?: "classic" | "dark";
+    customEmoji?: { [key: string]: string };
+    lang?: (keyof II18nLang);
+    emojiPath?: string;
+    hljs?: IHljs;
+    speech?: {
+        enable?: boolean,
+    };
+    anchor?: boolean;
+    math?: IMath;
+    cdn?: string;
+    markdown?: IMarkdownConfig;
+
+    transform?(html: string): string;
 }
 
 interface IHintData {
@@ -143,15 +214,10 @@ interface IResize {
     after?(height: number): void;
 }
 
-interface IPreviewOptions {
-    hljsStyle?: string;
-    enableHighlight?: boolean;
-    customEmoji?: { [key: string]: string };
-    lang?: (keyof II18nLang);
-    emojiPath?: string;
-}
-
 interface IOptions {
+    value?: string;
+    debugger?: boolean;
+    after?: () => void;
     typewriterMode?: boolean;
     keymap?: { [key: string]: string };
     height?: number | string;
@@ -165,9 +231,10 @@ interface IOptions {
     mode?: "wysiwyg-show" | "markdown-show" | "wysiwyg-only" | "markdown-only";
     preview?: IPreview;
     hint?: IHint;
+    theme?: "classic" | "dark";
     upload?: IUpload;
     classes?: IClasses;
-
+    cdn?: string;
     tab?: string;
 
     input?(value: string, previewElement?: HTMLElement): void;
@@ -183,6 +250,12 @@ interface IOptions {
     select?(value: string): void;
 }
 
+interface IEChart {
+    setOption(option: any): void;
+
+    resize(): void;
+}
+
 interface IVditor {
     id: string;
     options: IOptions;
@@ -192,7 +265,7 @@ interface IVditor {
     currentPreviewMode: keyof IPreviewMode;
     devtools?: {
         element: HTMLDivElement,
-        ASTChart: echarts.ECharts
+        ASTChart: IEChart,
         renderEchart(vditor: IVditor): void,
     };
     toolbar?: {
@@ -204,7 +277,6 @@ interface IVditor {
     };
     editor?: {
         element: HTMLPreElement,
-        range: Range,
     };
     counter?: {
         element: HTMLElement
@@ -215,7 +287,7 @@ interface IVditor {
     };
     hint?: {
         timeId: number
-        element: HTMLUListElement
+        element: HTMLDivElement
         fillEmoji(element: HTMLElement, vditor: IVditor): void
         render(vditor: IVditor): void,
     };
@@ -226,89 +298,30 @@ interface IVditor {
     };
     upload?: {
         element: HTMLElement
-        isUploading: boolean,
+        isUploading: boolean
+        range: Range,
     };
     undo: {
         redo(vditor: IVditor): void
         undo(vditor: IVditor): void
         addToUndoStack(vditor: IVditor): void
         recordFirstPosition(vditor: IVditor): void,
+        enableIcon(vditor: IVditor): void,
+    };
+    wysiwygUndo: {
+        redo(vditor: IVditor): void
+        undo(vditor: IVditor): void
+        addToUndoStack(vditor: IVditor): void
+        recordFirstWbr(vditor: IVditor, event: KeyboardEvent): void,
+        enableIcon(vditor: IVditor): void,
     };
     wysiwyg: {
-        element: HTMLElement,
-        setExpand(): void,
+        element: HTMLPreElement,
+        popover: HTMLDivElement,
+        afterRenderTimeoutId: number,
+        hlToolbarTimeoutId: number,
+        preventInput: boolean,
+        composingLock: boolean,
+        spinVditorDOM(vditor: IVditor, element: HTMLElement): void,
     };
-}
-
-declare class IVditorConstructor {
-
-    public static codeRender(element: HTMLElement, lang?: (keyof II18nLang)): void;
-
-    public static highlightRender(hljsStyle: string, enableHighlight: boolean, element?: HTMLElement | Document): void;
-
-    public static mathRenderByLute(element: HTMLElement): void;
-
-    public static mathRender(element: HTMLElement): void;
-
-    public static mermaidRender(element: HTMLElement): void;
-
-    public static chartRender(element?: HTMLElement | Document): void;
-
-    public static abcRender(element?: HTMLElement | Document): void;
-
-    public static mediaRender(element: HTMLElement): void;
-
-    public static md2html(mdText: string, options?: IPreviewOptions): string;
-
-    public static preview(element: HTMLTextAreaElement, options?: IPreviewOptions): void;
-
-    public readonly version: string;
-    public vditor: IVditor;
-
-    constructor(options: IOptions)
-
-    public getValue(): string;
-
-    public insertValue(value: string): void;
-
-    public focus(): void;
-
-    public blur(): void;
-
-    public disabled(): void;
-
-    public enable(): void;
-
-    public setSelection(start: number, end: number): void;
-
-    public getSelection(): string;
-
-    public setValue(text: string): void;
-
-    public renderPreview(value?: string): void;
-
-    public getCursorPosition(editor: HTMLPreElement): {
-        left: number,
-        top: number,
-    };
-
-    public deleteValue(): void;
-
-    public updateValue(): string;
-
-    public isUploading(): boolean;
-
-    public clearCache(): void;
-
-    public disabledCache(): void;
-
-    public enableCache(): void;
-
-    public html2md(value: string): string;
-
-    public getHTML(): string;
-
-    public tip(text: string, time?: number): void;
-
-    public setPreviewMode(mode: string): void;
 }

@@ -1,8 +1,10 @@
 import DiffMatchPatch, {diff_match_patch, patch_obj} from "diff-match-patch";
 import {formatRender} from "../editor/formatRender";
 import {getSelectPosition} from "../editor/getSelectPosition";
-import {getText} from "../editor/getText";
+import {disableToolbar} from "../toolbar/disableToolbar";
+import {enableToolbar} from "../toolbar/enableToolbar";
 import {scrollCenter} from "../util/editorCommenEvent";
+import {getMarkdown} from "../util/getMarkdown";
 
 class Undo {
     private undoStack: Array<{ patchList: patch_obj[], end: number }>;
@@ -22,6 +24,16 @@ class Undo {
         this.hasUndo = false;
     }
 
+    public enableIcon(vditor: IVditor) {
+        if (this.undoStack.length > 1) {
+            enableToolbar(vditor.toolbar.elements, ["undo"]);
+        }
+
+        if (this.redoStack.length !== 0) {
+            enableToolbar(vditor.toolbar.elements, ["redo"]);
+        }
+    }
+
     public recordFirstPosition(vditor: IVditor) {
         if (this.undoStack.length === 1) {
             this.undoStack[0].end = getSelectPosition(vditor.editor.element).end;
@@ -29,6 +41,9 @@ class Undo {
     }
 
     public undo(vditor: IVditor) {
+        if (vditor.editor.element.getAttribute("contenteditable") === "false") {
+            return;
+        }
         if (this.undoStack.length < 2) {
             return;
         }
@@ -42,6 +57,9 @@ class Undo {
     }
 
     public redo(vditor: IVditor) {
+        if (vditor.editor.element.getAttribute("contenteditable") === "false") {
+            return;
+        }
         const state = this.redoStack.pop();
         if (!state || !state.patchList) {
             return;
@@ -53,7 +71,7 @@ class Undo {
     public addToUndoStack(vditor: IVditor) {
         clearTimeout(this.timeout);
         this.timeout = window.setTimeout(() => {
-            const text = getText(vditor.editor.element);
+            const text = getMarkdown(vditor);
             const diff = this.dmp.diff_main(text, this.lastText, true);
             const patchList = this.dmp.patch_make(text, this.lastText, diff);
             if (patchList.length === 0) {
@@ -67,18 +85,11 @@ class Undo {
             if (this.hasUndo) {
                 this.redoStack = [];
                 this.hasUndo = false;
-                if (vditor.toolbar.elements.redo) {
-                    const redoClassName = vditor.toolbar.elements.redo.children[0].className;
-                    if (redoClassName.indexOf(" vditor-menu--disabled") === -1) {
-                        vditor.toolbar.elements.redo.children[0].className =
-                            redoClassName + " vditor-menu--disabled";
-                    }
-                }
+                disableToolbar(vditor.toolbar.elements, ["redo"]);
             }
 
-            if (vditor.toolbar.elements.undo && this.undoStack.length > 1) {
-                vditor.toolbar.elements.undo.children[0].className =
-                    vditor.toolbar.elements.undo.children[0].className.replace(" vditor-menu--disabled", "");
+            if (this.undoStack.length > 1) {
+                enableToolbar(vditor.toolbar.elements, ["undo"]);
             }
         }, 500);
     }
@@ -110,30 +121,24 @@ class Undo {
 
         this.lastText = text;
 
-        formatRender(vditor, text, positoin, false);
+        formatRender(vditor, text, positoin, {
+            enableAddUndoStack: false,
+            enableHint: false,
+            enableInput: true,
+        });
 
         scrollCenter(vditor.editor.element);
 
-        if (vditor.toolbar.elements.undo) {
-            const undoClassName = vditor.toolbar.elements.undo.children[0].className;
-            if (this.undoStack.length > 1) {
-                vditor.toolbar.elements.undo.children[0].className =
-                    undoClassName.replace(" vditor-menu--disabled", "");
-            } else if (undoClassName.indexOf(" vditor-menu--disabled") === -1) {
-                vditor.toolbar.elements.undo.children[0].className =
-                    undoClassName + " vditor-menu--disabled";
-            }
+        if (this.undoStack.length > 1) {
+            enableToolbar(vditor.toolbar.elements, ["undo"]);
+        } else {
+            disableToolbar(vditor.toolbar.elements, ["undo"]);
         }
 
-        if (vditor.toolbar.elements.redo) {
-            const redoClassName = vditor.toolbar.elements.redo.children[0].className;
-            if (this.redoStack.length !== 0) {
-                vditor.toolbar.elements.redo.children[0].className =
-                    redoClassName.replace(" vditor-menu--disabled", "");
-            } else if (redoClassName.indexOf(" vditor-menu--disabled") === -1) {
-                vditor.toolbar.elements.redo.children[0].className =
-                    redoClassName + " vditor-menu--disabled";
-            }
+        if (this.redoStack.length !== 0) {
+            enableToolbar(vditor.toolbar.elements, ["redo"]);
+        } else {
+            disableToolbar(vditor.toolbar.elements, ["redo"]);
         }
     }
 }

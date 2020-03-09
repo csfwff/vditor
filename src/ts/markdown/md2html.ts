@@ -1,44 +1,54 @@
-import {CDN_PATH, VDITOR_VERSION} from "../constants";
+import {VDITOR_VERSION} from "../constants";
+import {addScript} from "../util/addScript";
 
-declare const Lute: ILute;
+export const loadLuteJs = (vditor: IVditor | string) => {
+    // let cdn = `https://cdn.jsdelivr.net/npm/vditor@${VDITOR_VERSION}`;
+    // if (typeof vditor === "string" && vditor) {
+    //     cdn = vditor;
+    // } else if (typeof vditor === "object" && vditor.options.cdn) {
+    //     cdn = vditor.options.cdn;
+    // }
+    // addScript(`${cdn}/dist/js/lute/lute.min.js`, "vditorLuteScript");
+    // addScript(`/src/js/lute/lute.min.js`, "vditorLuteScript");
+    addScript(`http://192.168.80.35:9090/lute.min.js?${new Date().getTime()}`, "vditorLuteScript");
 
-export const loadLuteJs = (vditor?: IVditor) => {
-    const scriptElement = document.createElement("script");
-    scriptElement.type = "text/javascript";
-    scriptElement.src = `${CDN_PATH}/vditor@${VDITOR_VERSION}/dist/js/lute/lute.min.js`;
-    // scriptElement.src = `http://192.168.0.107:9090/lute.min.js?${new Date().getTime()}`;
-    document.getElementsByTagName("head")[0].appendChild(scriptElement);
-
-    return new Promise((resolve) => {
-        scriptElement.onload = () => {
-            if (vditor && !vditor.lute) {
-                vditor.lute = Lute.New();
-                vditor.lute.PutEmojis(vditor.options.hint.emoji);
-                vditor.lute.SetEmojiSite(vditor.options.hint.emojiPath);
-            }
-            resolve();
-        };
-    });
+    if (vditor && typeof vditor === "object" && !vditor.lute) {
+        vditor.lute = Lute.New();
+        vditor.lute.PutEmojis(vditor.options.hint.emoji);
+        vditor.lute.SetEmojiSite(vditor.options.hint.emojiPath);
+        vditor.lute.SetInlineMathAllowDigitAfterOpenMarker(vditor.options.preview.math.inlineDigit);
+        vditor.lute.SetAutoSpace(vditor.options.preview.markdown.autoSpace);
+        vditor.lute.SetToC(vditor.options.preview.markdown.toc);
+        vditor.lute.SetChinesePunct(vditor.options.preview.markdown.chinesePunct);
+        vditor.lute.SetFixTermTypo(vditor.options.preview.markdown.fixTermTypo);
+    }
 };
 
-export const md2htmlByPreview = async (mdText: string, options?: IPreviewOptions) => {
+export const md2htmlByPreview = (mdText: string, options?: IPreviewOptions) => {
     if (typeof Lute === "undefined") {
-        await loadLuteJs();
+        loadLuteJs(options && options.cdn);
     }
     options = Object.assign({
-        emojiSite: `${CDN_PATH}/vditor/dist/images/emoji`,
+        emojiSite: `${(options && options.cdn) ||
+        `https://cdn.jsdelivr.net/npm/vditor@${VDITOR_VERSION}`}/dist/images/emoji`,
         emojis: {},
     }, options);
 
     const lute: ILute = Lute.New();
     lute.PutEmojis(options.customEmoji);
     lute.SetEmojiSite(options.emojiPath);
-    const md = await lute.MarkdownStr("", mdText);
-
-    return md[0] || md[1];
+    lute.SetHeadingAnchor(options.anchor);
+    lute.SetInlineMathAllowDigitAfterOpenMarker(options.math.inlineDigit);
+    lute.SetAutoSpace(options.markdown.autoSpace);
+    lute.SetToC(options.markdown.toc);
+    lute.SetChinesePunct(options.markdown.chinesePunct);
+    lute.SetFixTermTypo(options.markdown.fixTermTypo);
+    return lute.Md2HTML(mdText);
 };
 
-export const md2htmlByVditor = async (mdText: string, vditor: IVditor) => {
-    const md = await vditor.lute.MarkdownStr("", mdText);
-    return md[0] || md[1];
+export const md2htmlByVditor = (mdText: string, vditor: IVditor) => {
+    if (typeof vditor.lute === "undefined") {
+        loadLuteJs(vditor.options.cdn);
+    }
+    return vditor.lute.Md2HTML(mdText);
 };

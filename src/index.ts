@@ -3,7 +3,6 @@ import {Counter} from "./ts/counter/index";
 import {DevTools} from "./ts/devtools";
 import {formatRender} from "./ts/editor/formatRender";
 import {getSelectText} from "./ts/editor/getSelectText";
-import {getText} from "./ts/editor/getText";
 import {html2md} from "./ts/editor/html2md";
 import {Editor} from "./ts/editor/index";
 import {insertText} from "./ts/editor/insertText";
@@ -13,34 +12,45 @@ import {Hint} from "./ts/hint/index";
 import {abcRender} from "./ts/markdown/abcRender";
 import {chartRender} from "./ts/markdown/chartRender";
 import {codeRender} from "./ts/markdown/codeRender";
+import {graphvizRender} from "./ts/markdown/graphvizRender";
 import {highlightRender} from "./ts/markdown/highlightRender";
 import {mathRender} from "./ts/markdown/mathRender";
-import {mathRenderByLute} from "./ts/markdown/mathRenderByLute";
 import {loadLuteJs, md2htmlByPreview, md2htmlByVditor} from "./ts/markdown/md2html";
 import {mediaRender} from "./ts/markdown/mediaRender";
 import {mermaidRender} from "./ts/markdown/mermaidRender";
 import {previewRender} from "./ts/markdown/previewRender";
+import {speechRender} from "./ts/markdown/speechRender";
 import {Preview} from "./ts/preview/index";
 import {Resize} from "./ts/resize/index";
 import {Tip} from "./ts/tip";
+import {disableToolbar} from "./ts/toolbar/disableToolbar";
+import {enableToolbar} from "./ts/toolbar/enableToolbar";
 import {Toolbar} from "./ts/toolbar/index";
-import {Ui} from "./ts/ui/index";
+import {initUI} from "./ts/ui/initUI";
+import {setTheme} from "./ts/ui/setTheme";
 import {Undo} from "./ts/undo";
+import {WysiwygUndo} from "./ts/undo/WysiwygUndo";
 import {Upload} from "./ts/upload/index";
+import {getMarkdown} from "./ts/util/getMarkdown";
 import {Options} from "./ts/util/Options";
 import {setPreviewMode} from "./ts/util/setPreviewMode";
 import {WYSIWYG} from "./ts/wysiwyg";
+import {afterRenderEvent} from "./ts/wysiwyg/afterRenderEvent";
+import {insertHTML} from "./ts/wysiwyg/insertHTML";
+import {processCodeRender} from "./ts/wysiwyg/processCodeRender";
+import {renderDomByMd} from "./ts/wysiwyg/renderDomByMd";
 
 class Vditor {
 
     public static codeRender = codeRender;
+    public static graphvizRender = graphvizRender;
     public static highlightRender = highlightRender;
-    public static mathRenderByLute = mathRenderByLute;
     public static mathRender = mathRender;
     public static mermaidRender = mermaidRender;
     public static chartRender = chartRender;
     public static abcRender = abcRender;
     public static mediaRender = mediaRender;
+    public static speechRender = speechRender;
     public static md2html = md2htmlByPreview;
     public static preview = previewRender;
     public readonly version: string;
@@ -52,6 +62,11 @@ class Vditor {
         const getOptions = new Options(options);
         const mergedOptions = getOptions.merge();
 
+        if (!(mergedOptions.lang === "en_US" || mergedOptions.lang === "ko_KR" || mergedOptions.lang === "zh_CN")) {
+            console.error("options.lang error, see https://hacpai.com/article/1549638745630#toc_h4_10");
+            return;
+        }
+
         this.vditor = {
             currentMode: mergedOptions.mode.indexOf("wysiwyg") > -1 ? "wysiwyg" : "markdown",
             currentPreviewMode: mergedOptions.preview.mode,
@@ -62,6 +77,7 @@ class Vditor {
             tip: new Tip(),
             undo: undefined,
             wysiwyg: undefined,
+            wysiwygUndo: undefined,
         };
 
         if (mergedOptions.counter > 0) {
@@ -71,9 +87,8 @@ class Vditor {
 
         if (mergedOptions.mode !== "wysiwyg-only") {
             this.vditor.editor = new Editor(this.vditor);
+            this.vditor.undo = new Undo();
         }
-
-        this.vditor.undo = new Undo();
 
         if (mergedOptions.resize.enable) {
             const resize = new Resize(this.vditor);
@@ -89,32 +104,45 @@ class Vditor {
             this.vditor.devtools = new DevTools();
         }
 
-        loadLuteJs(this.vditor).then(() => {
-            if (this.vditor.editor && (this.vditor.toolbar.elements.preview || this.vditor.toolbar.elements.both)) {
-                const preview = new Preview(this.vditor);
-                this.vditor.preview = preview;
-            }
+        loadLuteJs(this.vditor);
 
-            if (mergedOptions.upload.url || mergedOptions.upload.handler) {
-                const upload = new Upload();
-                this.vditor.upload = upload;
-            }
+        if (this.vditor.editor && (this.vditor.toolbar.elements.preview || this.vditor.toolbar.elements.both)) {
+            const preview = new Preview(this.vditor);
+            this.vditor.preview = preview;
+        }
 
-            if (this.vditor.options.mode !== "markdown-only") {
-                this.vditor.wysiwyg = new WYSIWYG(this.vditor);
-            }
+        if (mergedOptions.upload.url || mergedOptions.upload.handler) {
+            const upload = new Upload();
+            this.vditor.upload = upload;
+        }
 
-            if (this.vditor.options.hint.at || this.vditor.toolbar.elements.emoji) {
-                const hint = new Hint();
-                this.vditor.hint = hint;
-            }
+        if (this.vditor.options.mode !== "markdown-only") {
+            this.vditor.wysiwyg = new WYSIWYG(this.vditor);
+            this.vditor.wysiwygUndo = new WysiwygUndo();
+        }
 
-            const ui = new Ui(this.vditor);
-        });
+        if (this.vditor.options.hint.at || this.vditor.toolbar.elements.emoji) {
+            const hint = new Hint();
+            this.vditor.hint = hint;
+        }
+
+        initUI(this.vditor);
+
+        if (mergedOptions.after) {
+            // fix after constructor
+            setTimeout(() => {
+                mergedOptions.after();
+            }, 0);
+        }
+    }
+
+    public setTheme(theme: "dark" | "classic") {
+        this.vditor.options.theme = theme;
+        setTheme(this.vditor);
     }
 
     public getValue() {
-        return getText(this.vditor.editor.element);
+        return getMarkdown(this.vditor);
     }
 
     public focus() {
@@ -122,7 +150,6 @@ class Vditor {
             this.vditor.editor.element.focus();
         } else {
             this.vditor.wysiwyg.element.focus();
-            this.vditor.wysiwyg.setExpand();
         }
     }
 
@@ -135,27 +162,52 @@ class Vditor {
     }
 
     public disabled() {
-        this.vditor.editor.element.setAttribute("contenteditable", "false");
+        disableToolbar(this.vditor.toolbar.elements, ["emoji", "headings", "bold", "italic", "strike", "link",
+            "list", "ordered-list", "check", "quote", "line", "code", "inline-code", "upload", "record", "table",
+            "undo", "redo", "wysiwyg"]);
+        if (this.vditor.currentMode === "markdown") {
+            this.vditor.editor.element.setAttribute("contenteditable", "false");
+        } else {
+            this.vditor.wysiwyg.element.setAttribute("contenteditable", "false");
+        }
     }
 
     public enable() {
-        this.vditor.editor.element.setAttribute("contenteditable", "true");
+        enableToolbar(this.vditor.toolbar.elements, ["emoji", "headings", "bold", "italic", "strike", "link",
+            "list", "ordered-list", "check", "quote", "line", "code", "inline-code", "upload", "record", "table", "wysiwyg"]);
+        if (this.vditor.currentMode === "markdown") {
+            this.vditor.undo.enableIcon(this.vditor);
+            this.vditor.editor.element.setAttribute("contenteditable", "true");
+        } else {
+            this.vditor.wysiwygUndo.enableIcon(this.vditor);
+            this.vditor.wysiwyg.element.setAttribute("contenteditable", "true");
+        }
     }
 
     public setSelection(start: number, end: number) {
-        setSelectionByPosition(start, end, this.vditor.editor.element);
+        if (this.vditor.currentMode === "wysiwyg") {
+            console.error("所见即所得模式暂不支持该方法");
+        } else {
+            setSelectionByPosition(start, end, this.vditor.editor.element);
+        }
     }
 
     public getSelection() {
         let selectText = "";
         if (window.getSelection().rangeCount !== 0) {
-            selectText = getSelectText(this.vditor.editor.element);
+            if (this.vditor.currentMode === "wysiwyg") {
+                selectText = getSelectText(this.vditor.wysiwyg.element);
+            } else {
+                selectText = getSelectText(this.vditor.editor.element);
+            }
         }
         return selectText;
     }
 
     public renderPreview(value?: string) {
-        this.vditor.preview.render(this.vditor, value);
+        if (this.vditor.currentMode === "markdown") {
+            this.vditor.preview.render(this.vditor, value);
+        }
     }
 
     public getCursorPosition() {
@@ -187,7 +239,11 @@ class Vditor {
     }
 
     public getHTML() {
-        return md2htmlByVditor(getText(this.vditor.editor.element), this.vditor);
+        if (this.vditor.currentMode === "markdown") {
+            return md2htmlByVditor(getMarkdown(this.vditor), this.vditor);
+        } else {
+            return this.vditor.lute.VditorDOM2HTML(this.vditor.wysiwyg.element.innerHTML);
+        }
     }
 
     public tip(text: string, time?: number) {
@@ -202,23 +258,70 @@ class Vditor {
         if (window.getSelection().isCollapsed) {
             return;
         }
-        insertText(this.vditor, "", "", true);
+        if (this.vditor.currentMode === "markdown") {
+            insertText(this.vditor, "", "", true);
+        } else {
+            document.execCommand("delete", false);
+        }
     }
 
     public updateValue(value: string) {
-        insertText(this.vditor, value, "", true);
+        if (this.vditor.currentMode === "markdown") {
+            insertText(this.vditor, value, "", true);
+        } else {
+            document.execCommand("insertHTML", false, value);
+        }
     }
 
-    public insertValue(value: string) {
-        insertText(this.vditor, value, "");
+    public insertValue(value: string, render = true) {
+        if (this.vditor.currentMode === "markdown") {
+            insertText(this.vditor, value, "");
+        } else {
+            if (getSelection().rangeCount === 0) {
+                this.vditor.wysiwyg.element.focus();
+            } else {
+                const range = getSelection().getRangeAt(0);
+                if (!this.vditor.wysiwyg.element.contains(range.startContainer)) {
+                    this.vditor.wysiwyg.element.focus();
+                } else {
+                    range.collapse(true);
+                }
+            }
+
+            if (render) {
+                const vditorDomHTML = this.vditor.lute.Md2VditorDOM(value);
+                insertHTML(vditorDomHTML, this.vditor);
+
+                this.vditor.wysiwyg.element.querySelectorAll(".vditor-wysiwyg__block")
+                    .forEach((blockElement: HTMLElement) => {
+                        processCodeRender(blockElement, this.vditor);
+                    });
+
+                afterRenderEvent(this.vditor, {
+                    enableAddUndoStack: true,
+                    enableHint: false,
+                    enableInput: false,
+                });
+            } else {
+                document.execCommand("insertHTML", false, value);
+            }
+        }
     }
 
-    public setValue(value: string) {
-        formatRender(this.vditor, value, {
-            end: value.length,
-            start: value.length,
-        });
-        if (!value) {
+    public setValue(markdown: string) {
+        if (this.vditor.currentMode === "markdown") {
+            formatRender(this.vditor, markdown, {
+                end: markdown.length,
+                start: markdown.length,
+            }, {
+                enableAddUndoStack: true,
+                enableHint: false,
+                enableInput: false,
+            });
+        } else {
+            renderDomByMd(this.vditor, markdown, false);
+        }
+        if (!markdown) {
             localStorage.removeItem("vditor" + this.vditor.id);
         }
     }

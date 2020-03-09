@@ -1,33 +1,42 @@
 .vditor-hint {
-  background-color: $layerBg;
+  background-color: var(--panel-background-color);
   position: absolute;
   box-shadow: $layerShadow;
   border-radius: 3px;
   padding: 5px 0;
-  z-index: 3;
+  z-index: 4;
   line-height: 20px;
   list-style: none;
-  color: $textareaColor;
   font-size: 12px;
   margin: 0;
   max-width: 250px;
   min-width: 80px;
   display: none;
 
-  li {
-    cursor: pointer;
+  button {
+    color: var(--toolbar-icon-color);
+    display: block;
     padding: 3px 10px;
-    border-bottom: 1px solid $borderColor;
+    border: 0;
+    border-radius: 0;
+    border-bottom: 1px solid var(--border-color);
     line-height: 20px;
+    width: 100%;
+    box-sizing: border-box;
+    text-align: left;
+    margin: 0;
+    background-color: transparent;
+    cursor: pointer;
+
     &:last-child {
       border-bottom: 0;
     }
   }
 
   &--current,
-  li:hover {
-    background-color: $hoverBg;
-    color: $hoverColor;
+  button:hover {
+    background-color: var(--toolbar-background-color) !important;
+    color: var(--toolbar-icon-hover-color) !important;
   }
 
   &__emoji {

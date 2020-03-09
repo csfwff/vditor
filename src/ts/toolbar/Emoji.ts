@@ -1,6 +1,8 @@
 import emojiSVG from "../../assets/icons/emoji.svg";
 import {insertText} from "../editor/insertText";
-import {getEventName} from "../util/getEventName";
+import {setSelectionFocus} from "../editor/setSelection";
+import {getEventName} from "../util/compatibility";
+import {insertHTML} from "../wysiwyg/insertHTML";
 import {MenuItem} from "./MenuItem";
 
 export class Emoji extends MenuItem {
@@ -11,16 +13,17 @@ export class Emoji extends MenuItem {
         this.element.children[0].innerHTML = menuItem.icon || emojiSVG;
 
         const emojiPanelElement = document.createElement("div");
-        emojiPanelElement.className = "vditor-panel";
+        emojiPanelElement.className = "vditor-panel vditor-arrow";
 
         let commonEmojiHTML = "";
         Object.keys(vditor.options.hint.emoji).forEach((key) => {
             const emojiValue = vditor.options.hint.emoji[key];
             if (emojiValue.indexOf(".") > -1) {
-                commonEmojiHTML += `<span data-value=":${key}: " data-key=":${key}:"><img
-data-value=":${key}: " data-key=":${key}:" src="${emojiValue}"/></span>`;
+                commonEmojiHTML += `<button data-value=":${key}: " data-key=":${key}:"><img
+data-value=":${key}: " data-key=":${key}:" class="vditor-emojis__icon" src="${emojiValue}"/></button>`;
             } else {
-                commonEmojiHTML += `<span data-value="${emojiValue} " data-key="${key}">${emojiValue}</span>`;
+                commonEmojiHTML += `<button data-value="${emojiValue} "
+ data-key="${key}"><span class="vditor-emojis__icon">${emojiValue}</span></button>`;
             }
         });
 
@@ -39,6 +42,9 @@ data-value=":${key}: " data-key=":${key}:" src="${emojiValue}"/></span>`;
 
     public _bindEvent(emojiPanelElement: HTMLElement, vditor: IVditor) {
         this.element.children[0].addEventListener(getEventName(), (event) => {
+            if (this.element.firstElementChild.classList.contains("vditor-menu--disabled")) {
+                return;
+            }
             if (emojiPanelElement.style.display === "block") {
                 emojiPanelElement.style.display = "none";
             } else {
@@ -50,21 +56,38 @@ data-value=":${key}: " data-key=":${key}:" src="${emojiValue}"/></span>`;
             }
 
             if (vditor.hint) {
-               vditor.hint.element.style.display = "none";
-           }
+                vditor.hint.element.style.display = "none";
+            }
             event.preventDefault();
         });
 
-        emojiPanelElement.querySelectorAll(".vditor-emojis span").forEach((element) => {
+        emojiPanelElement.querySelectorAll(".vditor-emojis button").forEach((element) => {
             element.addEventListener(getEventName(), (event: Event) => {
-                insertText(vditor, (event.target as HTMLElement).getAttribute("data-value"),
-                    "", true);
-                emojiPanelElement.style.display = "none";
                 event.preventDefault();
+                const value = element.getAttribute("data-value");
+                if (vditor.currentMode === "wysiwyg") {
+                    if (!vditor.wysiwyg.element.contains(getSelection().getRangeAt(0).startContainer)) {
+                        vditor.wysiwyg.element.focus();
+                    }
+                    const range = getSelection().getRangeAt(0);
+                    if (value.indexOf(":") > -1) {
+                        insertHTML(vditor.lute.SpinVditorDOM(value), vditor);
+                        range.insertNode(document.createTextNode(" "));
+                    } else {
+                        range.insertNode(document.createTextNode(value));
+                    }
+                    range.collapse(false);
+                    setSelectionFocus(range);
+                } else {
+                    insertText(vditor, value, "", true);
+                }
+                emojiPanelElement.style.display = "none";
             });
             element.addEventListener("mouseover", (event: Event) => {
-                emojiPanelElement.querySelector(".vditor-emojis__tip").innerHTML =
-                    (event.target as HTMLElement).getAttribute("data-key");
+                if ((event.target as HTMLElement).tagName === "BUTTON") {
+                    emojiPanelElement.querySelector(".vditor-emojis__tip").innerHTML =
+                        (event.target as HTMLElement).getAttribute("data-key");
+                }
             });
         });
     }

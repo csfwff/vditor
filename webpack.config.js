@@ -2,13 +2,12 @@
  * @fileoverview webpack.
  *
  * @author <a href="http://vanessa.b3log.org">Liyuan Li</a>
- * @version 0.2.0.0, Aug 22, 2019
+ * @version 0.2.0.1, Jan 4, 2020
  */
 
 const path = require('path')
 const fs = require('fs')
 const webpack = require('webpack')
-const {CleanWebpackPlugin} = require('clean-webpack-plugin')
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 const OptimizeCSSAssetsPlugin = require('optimize-css-assets-webpack-plugin')
 const WebpackOnBuildPlugin = require('on-build-webpack')
@@ -21,7 +20,7 @@ const banner = new webpack.BannerPlugin({
   
 MIT License
 
-Copyright (c) 2019 B3log 开源, b3log.org
+Copyright (c) 2018-present B3log 开源, b3log.org
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -44,12 +43,17 @@ SOFTWARE.
   entryOnly: true,
 })
 
+const rimraf = require('rimraf')
+
+rimraf.sync('./dist', {},() => {
+  console.log('rm dist')
+})
+
 module.exports = [
   {
     mode: 'production',
     entry: {
-      'index.classic': './src/assets/scss/classic.scss',
-      'index.dark': './src/assets/scss/dark.scss',
+      'index': './src/assets/scss/index.scss',
     },
     resolve: {
       extensions: ['.scss'],
@@ -89,19 +93,17 @@ module.exports = [
       ],
     },
     plugins: [
-      new CleanWebpackPlugin(
-        {cleanOnceBeforeBuildPatterns: [path.join(__dirname, 'dist')]}),
       banner,
       new MiniCssExtractPlugin({
         filename: '[name].css',
       }),
       new WebpackOnBuildPlugin(() => {
-        fs.unlinkSync('./dist/index.classic.js')
-        fs.unlinkSync('./dist/index.dark.js')
+        fs.unlinkSync('./dist/index.js')
       }),
       new CopyPlugin([
         {from: 'src/images', to: 'images'},
         {from: 'src/js', to: 'js'},
+        {from: 'src/assets/index.d.min.ts', to: '.'},
       ]),
     ],
   }, {
@@ -109,16 +111,15 @@ module.exports = [
     output: {
       filename: '[name].js',
       path: path.resolve(__dirname, 'dist'),
-      chunkFilename: '[name].bundle.js',
-      // pkg.cdn: https://static.hacpai.com/js/lib | https://unpkg.com | https://cdn.jsdelivr.net/npm
-      publicPath: `${pkg.cdn}/vditor@${pkg.version}/dist/`,
+      // chunkFilename: '[name].bundle.js',
+      // publicPath: `${pkg.cdn}/vditor@${pkg.version}/dist/`,
       libraryTarget: 'umd',
       library: 'Vditor',
       libraryExport: 'default',
     },
     entry: {
       'index.min': './src/index.ts',
-      'method.min': './src/method.ts'
+      'method.min': './src/method.ts',
     },
     resolve: {
       extensions: ['.js', '.ts', '.svg', 'png'],
@@ -180,20 +181,19 @@ module.exports = [
       // new BundleAnalyzerPlugin(),
       new webpack.DefinePlugin({
         VDITOR_VERSION: JSON.stringify(pkg.version),
-        CDN_PATH: JSON.stringify(pkg.cdn),
       }),
       banner,
     ],
-    optimization: {
-      namedModules: true,
-      namedChunks: true,
-      splitChunks: {
-        cacheGroups: {
-          default: false,
-          vendors: {
-            test: /null/,
-          },
-        },
-      },
-    },
+    // optimization: {
+    //   namedModules: true,
+    //   namedChunks: true,
+    //   splitChunks: {
+    //     cacheGroups: {
+    //       default: false,
+    //       vendors: {
+    //         test: /null/,
+    //       },
+    //     },
+    //   },
+    // },
   }]

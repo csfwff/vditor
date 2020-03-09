@@ -1,25 +1,12 @@
 export const selectIsEditor = (editor: HTMLElement, range?: Range) => {
-    let isEditor = false;
     if (!range) {
         if (window.getSelection().rangeCount === 0) {
-            return isEditor;
+            return false;
         } else {
             range = window.getSelection().getRangeAt(0);
         }
     }
-    let container = range.commonAncestorContainer;
-    while (container) {
-        if (editor.isEqualNode(container)) {
-            isEditor = true;
-            container = undefined;
-        }
-        if (container) {
-            if (container.nodeName === "BODY") {
-                container = undefined;
-            } else {
-                container = container.parentElement;
-            }
-        }
-    }
-    return isEditor;
+    const container = range.commonAncestorContainer;
+
+    return editor.isEqualNode(container) || editor.contains(container);
 };

@@ -5,6 +5,7 @@
     ],
     "jsRules": {},
     "rules": {
+        "interface-name" : false,
         "no-console": [true, "log"],
         "max-line-length": [
             true,
@@ -12,7 +13,8 @@
                 "limit": 120,
                 "ignore-pattern": "match"
             }
-        ]
+        ],
+        "prefer-for-of": false
     },
     "rulesDirectory": []
 }

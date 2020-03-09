@@ -1,34 +1,37 @@
-import {getText} from "../editor/getText";
+import {addScript} from "../util/addScript";
+import {getMarkdown} from "../util/getMarkdown";
+
+declare const echarts: {
+    init(element: HTMLElement): IEChart;
+};
 
 export class DevTools {
     public element: HTMLDivElement;
-    public ASTChart: echarts.ECharts;
+    public ASTChart: IEChart;
 
     constructor() {
         this.element = document.createElement("div");
         this.element.className = "vditor-devtools";
-        this.element.innerHTML = '<div class="vditor--error"></div><div style="height: 100%;"></div>';
+        this.element.innerHTML = '<div class="vditor-reset--error"></div><div style="height: 100%;"></div>';
     }
 
-    public async renderEchart(vditor: IVditor) {
+    public renderEchart(vditor: IVditor) {
         if (vditor.devtools.element.style.display !== "block") {
             return;
         }
 
         if (!this.ASTChart) {
-            const {default: echarts} = await import(/* webpackChunkName: "echarts" */ "echarts");
+            addScript(`${vditor.options.cdn}/dist/js/echarts/echarts.min.js`, "vditorEchartsScript");
             this.ASTChart = echarts.init(vditor.devtools.element.lastElementChild as HTMLDivElement);
         }
 
-        const data = vditor.lute.RenderEChartsJSON(vditor.currentMode === "wysiwyg" ?
-            vditor.wysiwyg.element.textContent : getText(vditor.editor.element));
         try {
             (this.element.lastElementChild as HTMLElement).style.display = "block";
             this.element.firstElementChild.innerHTML = "";
             this.ASTChart.setOption({
                 series: [
                     {
-                        data: JSON.parse(data[0]) || data[1],
+                        data: JSON.parse(vditor.lute.RenderEChartsJSON(getMarkdown(vditor))),
                         initialTreeDepth: -1,
                         label: {
                             align: "left",

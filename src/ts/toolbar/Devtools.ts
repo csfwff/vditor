@@ -1,5 +1,5 @@
 import bugSVG from "../../assets/icons/bug.svg";
-import {getEventName} from "../util/getEventName";
+import {getEventName} from "../util/compatibility";
 import {MenuItem} from "./MenuItem";
 
 export class Devtools extends MenuItem {
@@ -7,10 +7,10 @@ export class Devtools extends MenuItem {
         super(vditor, menuItem);
         this.element.children[0].innerHTML = menuItem.icon || bugSVG;
 
-        this.element.addEventListener(getEventName(), async () => {
-            if (this.element.children[0].className.indexOf("vditor-menu--current") > -1) {
-                this.element.children[0].className =
-                    this.element.children[0].className.replace(" vditor-menu--current", "");
+        this.element.addEventListener(getEventName(),  (event) => {
+            event.preventDefault();
+            if (this.element.children[0].classList.contains("vditor-menu--current")) {
+                this.element.children[0].classList.remove("vditor-menu--current");
                 vditor.devtools.element.style.display = "none";
                 if (vditor.wysiwyg) {
                     const padding =
@@ -19,7 +19,7 @@ export class Devtools extends MenuItem {
                     vditor.wysiwyg.element.style.paddingRight = `${Math.max(10, padding)}px`;
                 }
             } else {
-                this.element.children[0].className += " vditor-menu--current";
+                this.element.children[0].classList.add("vditor-menu--current");
                 vditor.devtools.element.style.display = "block";
                 if (vditor.wysiwyg) {
                     const padding =

@@ -1,61 +1,162 @@
 .vditor-wysiwyg {
-  background-color: $textareaBg;
   box-sizing: border-box;
   flex: 1;
-  margin: 0;
-  white-space: pre-wrap;
+  position: relative;
+  width: 100%;
 
-  &[contenteditable="false"] {
-    opacity: 0.3;
-    cursor: not-allowed;
+  .vditor-reset {
+    background-color: var(--panel-background-color);
+    margin: 0;
+    white-space: pre-wrap;
+    height: 100%;
+    box-sizing: border-box;
+
+    &[contenteditable="false"] {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+
+    &:empty::before {
+      content: attr(placeholder);
+      color: var(--second-color);
+    }
+
+    &:focus {
+      outline: none;
+      background-color: var(--textarea-background-color);
+    }
+
+    &:after {
+      content: "";
+      height: var(--editor-wysiwyg-bottom);
+      display: block;
+    }
   }
 
-  &:focus {
-    outline: none;
-    background-color: $textareaFocusBg;
+  blockquote:empty::before,
+  pre > code:empty::before,
+  p:empty::before,
+  h1:empty::after,
+  h2:empty::after,
+  h3:empty::after,
+  h4:empty::after,
+  h5:empty::after,
+  h6:empty::after {
+    content: ' ';
   }
 
-  .marker {
-    height: 0;
-    width: 0;
-    display: inline-block;
-    overflow: hidden;
-    transition: color .15s ease-in-out;
-    font-size: initial;
+  code {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  &__block {
+    &[data-type="html-block"] > pre,
+    &[data-type="math-block"] > pre {
+      margin-bottom: 0;
+    }
+
+    code {
+      padding: 0.2em 0.4em !important;
+    }
+
+    & > code {
+      display: none;
+    }
+
+    & > pre {
+      margin-bottom: -1em;
+      display: none;
+
+      & > code {
+        border: 1px solid var(--border-color);
+        overflow: auto !important;
+        display: block;
+      }
+    }
+
+    &[data-type=html-inline] .vditor-wysiwyg__preview svg {
+      fill: var(--second-color);
+      height: 12px;
+      cursor: pointer;
+      width: 12px;
+    }
+  }
+
+  &__preview {
+    cursor: pointer;
+    white-space: initial;
+    min-height: 27px;
+
+    pre {
+      margin-bottom: 1em !important;
+    }
+  }
+
+  h1:before,
+  h2:before,
+  h3:before,
+  h4:before,
+  h5:before,
+  h6:before,
+  div.vditor-wysiwyg__block:before {
+    float: left;
+    padding-right: 4px;
+    margin-left: -29px;
+    content: 'h1';
+    font-size: 0.85rem;
     font-weight: normal;
-    line-height: 24px;
+    text-transform: uppercase;
+    color: var(--second-color);
   }
 
-  .newline {
+  h2:before {
+    content: 'h2';
+  }
+
+  h3:before {
+    content: 'h3';
+  }
+
+  h4:before {
+    content: 'h4';
+  }
+
+  h5:before {
+    content: 'h5';
+  }
+
+  h6:before {
+    content: 'h6';
+  }
+
+  hr {
+    display: inline-block;
+    margin: 12px 0;
+    width: 100%;
+  }
+
+  div.vditor-wysiwyg__block {
+    &:before {
+      content: "</>";
+    }
+  }
+
+  details {
+    white-space: initial;
+  }
+
+  span[data-type="backslash"] > span {
     display: none;
+    color: var(--second-color);
   }
 
-  .node {
-    &--block {
-      position: relative;
-
-      & > .marker {
-        position: absolute;
-        left: 3px;
-      }
-    }
-
-    &--expand {
-      & > .marker {
-        width: auto;
-        height: auto;
-        display: inline;
-        color: #bbb;
-      }
-    }
+  span[data-type="link-ref"] {
+    color: $blurColor;
   }
 
-  li.node--expand .marker {
-    left: -9px;
-  }
-
-  p:empty:after {
-    content: '\200b';
+  span[data-type="toc-h"] {
+    color: $blurColor;
+    text-decoration: underline;
   }
 }
-
