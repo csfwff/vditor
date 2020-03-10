@@ -34,6 +34,7 @@ import {Upload} from "./ts/upload/index";
 import {getMarkdown} from "./ts/util/getMarkdown";
 import {Options} from "./ts/util/Options";
 import {setPreviewMode} from "./ts/util/setPreviewMode";
+import {setMode} from "./ts/util/setMode";
 import {WYSIWYG} from "./ts/wysiwyg";
 import {afterRenderEvent} from "./ts/wysiwyg/afterRenderEvent";
 import {insertHTML} from "./ts/wysiwyg/insertHTML";
@@ -327,11 +328,21 @@ class Vditor {
     }
 
     public undo(){
-        this.vditor.undo.undo(this.vditor)
+        if (this.vditor.currentMode === "markdown") {
+            this.vditor.undo.undo(this.vditor);
+        } else {
+            this.vditor.wysiwygUndo.undo(this.vditor);
+        }
+        //this.vditor.undo.undo(this.vditor)
     }
 
     public redo(){
-        this.vditor.undo.redo(this.vditor)
+        if (this.vditor.currentMode === "markdown") {
+            this.vditor.undo.redo(this.vditor);
+        } else {
+            this.vditor.wysiwygUndo.redo(this.vditor);
+        }
+        //this.vditor.undo.redo(this.vditor)
     }
 
     public setBold(){
@@ -406,7 +417,10 @@ class Vditor {
         insertText(this.vditor, "| col1", " | col2 | col3 |\n| --- | --- | --- |\n|  |  |  |\n|  |  |  |", false, true)
     }
 
-    
+    public setWysiwyg(mode:  "markdown" | "wysiwyg") {
+        setMode(mode,this.vditor);
+    }
+
 }
 
 export default Vditor;
