@@ -252,7 +252,8 @@ class Vditor {
     }
 
     public setPreviewMode(mode: keyof IPreviewMode) {
-        setPreviewMode(mode, this.vditor);
+        if(this.vditor.currentMode === "markdown")
+            setPreviewMode(mode, this.vditor);
     }
 
     public deleteValue() {
@@ -419,6 +420,10 @@ class Vditor {
 
     public setWysiwyg(mode:  "markdown" | "wysiwyg") {
         setMode(mode,this.vditor);
+    }
+
+    public getMode(){
+        return this.vditor.currentMode;
     }
 
 }

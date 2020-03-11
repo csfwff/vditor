@@ -70,7 +70,7 @@ export const setMode = (mode: "markdown" | "wysiwyg", vditor: IVditor) => {
         vditor.devtools.ASTChart.resize();
     }
 
-    // if (vditor.devtools && vditor.devtools.ASTChart && vditor.devtools.element.style.display === "block") {
-    //     vditor.devtools.ASTChart.resize();
-    // }
+    if (vditor.devtools && vditor.devtools.ASTChart && vditor.devtools.element.style.display === "block") {
+        vditor.devtools.ASTChart.resize();
+    }
 };
