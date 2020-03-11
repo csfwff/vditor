@@ -12,7 +12,7 @@ interface ILuteRender {
                 Type: number,
             },
         }
-    },               entering: boolean) => [string, number];
+    }, entering: boolean) => [string, number];
 }
 
 interface ILute {
@@ -32,6 +32,8 @@ interface ILute {
     SetInlineMathAllowDigitAfterOpenMarker(enable: boolean): void;
 
     SetToC(enable: boolean): void;
+
+    SetFootnotes(enable: boolean): void;
 
     SetAutoSpace(enable: boolean): void;
 
@@ -155,11 +157,12 @@ interface IMath {
     engine: "KaTeX" | "MathJax";
 }
 
-interface IMarkdownConfig  {
+interface IMarkdownConfig {
     autoSpace?: boolean;
     fixTermTypo?: boolean;
     chinesePunct?: boolean;
     toc?: boolean;
+    footnotes?: boolean;
 }
 
 interface IPreview {
@@ -231,6 +234,7 @@ interface IOptions {
     mode?: "wysiwyg-show" | "markdown-show" | "wysiwyg-only" | "markdown-only";
     preview?: IPreview;
     hint?: IHint;
+    hideToolbar?: boolean;
     theme?: "classic" | "dark";
     upload?: IUpload;
     classes?: IClasses;
@@ -270,6 +274,7 @@ interface IVditor {
     };
     toolbar?: {
         elements?: { [key: string]: HTMLElement },
+        element?: HTMLElement,
     };
     preview?: {
         element: HTMLElement

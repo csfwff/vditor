@@ -50,6 +50,19 @@ export const highlightToolbar = (vditor: IVditor) => {
             typeElement = typeElement.childNodes[range.startOffset] as HTMLElement;
         }
 
+        const footnotesElement = hasClosestByAttribute(typeElement, "data-type", "footnotes-block");
+        if (footnotesElement) {
+            vditor.wysiwyg.popover.innerHTML = "";
+            const insertBefore = genInsertBefore(range, footnotesElement, vditor);
+            const insertAfter = genInsertAfter(range, footnotesElement, vditor);
+            const close = genClose(vditor.wysiwyg.popover, footnotesElement, vditor);
+            vditor.wysiwyg.popover.insertAdjacentElement("beforeend", close);
+            vditor.wysiwyg.popover.insertAdjacentElement("beforeend", insertBefore);
+            vditor.wysiwyg.popover.insertAdjacentElement("beforeend", insertAfter);
+            setPopoverPosition(vditor, footnotesElement);
+            return;
+        }
+
         // 工具栏高亮和禁用
         const liElement = hasClosestByMatchTag(typeElement, "LI");
         if (hasClosestByClassName(typeElement, "vditor-task")) {
@@ -101,12 +114,28 @@ export const highlightToolbar = (vditor: IVditor) => {
             disableToolbar(vditor.toolbar.elements, ["table"]);
         }
 
+        // quote popover
+        const blockquoteElement = hasClosestByTag(typeElement, "BLOCKQUOTE") as HTMLTableElement;
+        if (blockquoteElement) {
+            vditor.wysiwyg.popover.innerHTML = "";
+            const insertBefore = genInsertBefore(range, blockquoteElement, vditor);
+            const insertAfter = genInsertAfter(range, blockquoteElement, vditor);
+            const close = genClose(vditor.wysiwyg.popover, blockquoteElement, vditor);
+            vditor.wysiwyg.popover.insertAdjacentElement("beforeend", close);
+            vditor.wysiwyg.popover.insertAdjacentElement("beforeend", insertBefore);
+            vditor.wysiwyg.popover.insertAdjacentElement("beforeend", insertAfter);
+            setPopoverPosition(vditor, blockquoteElement);
+        }
+
         // list popover
         const topOlElement = hasTopClosestByTag(typeElement, "OL");
         const topUlElement = hasTopClosestByTag(typeElement, "UL");
         let topListElement = topUlElement as HTMLElement;
         if (topOlElement && (!topUlElement || (topUlElement && topOlElement.contains(topUlElement)))) {
             topListElement = topOlElement;
+        }
+        if (topListElement && blockquoteElement && topListElement.contains(blockquoteElement)) {
+            topListElement = undefined;
         }
         if (topListElement) {
             vditor.wysiwyg.popover.innerHTML = "";
@@ -178,21 +207,6 @@ export const highlightToolbar = (vditor: IVditor) => {
             vditor.wysiwyg.popover.insertAdjacentElement("beforeend", indent);
 
             setPopoverPosition(vditor, topListElement);
-        }
-
-        // quote popover
-        let blockquoteElement = hasClosestByTag(typeElement, "BLOCKQUOTE") as HTMLTableElement;
-        if (blockquoteElement && !(topUlElement && blockquoteElement.contains(topUlElement))) {
-            vditor.wysiwyg.popover.innerHTML = "";
-            const insertBefore = genInsertBefore(range, blockquoteElement, vditor);
-            const insertAfter = genInsertAfter(range, blockquoteElement, vditor);
-            const close = genClose(vditor.wysiwyg.popover, blockquoteElement, vditor);
-            vditor.wysiwyg.popover.insertAdjacentElement("beforeend", close);
-            vditor.wysiwyg.popover.insertAdjacentElement("beforeend", insertBefore);
-            vditor.wysiwyg.popover.insertAdjacentElement("beforeend", insertAfter);
-            setPopoverPosition(vditor, blockquoteElement);
-        } else {
-            blockquoteElement = undefined;
         }
 
         // table popover
@@ -405,7 +419,7 @@ export const highlightToolbar = (vditor: IVditor) => {
             genAPopover(vditor, aElement);
         }
 
-        // link-ref
+        // link ref popover
         const linkRefElement = hasClosestByAttribute(typeElement, "data-type", "link-ref");
         if (linkRefElement) {
             vditor.wysiwyg.popover.innerHTML = "";
@@ -430,7 +444,7 @@ export const highlightToolbar = (vditor: IVditor) => {
                     event.preventDefault();
                     return;
                 }
-                if (event.altKey && event.key === "Enter") {
+                if (!isCtrl(event) && !event.shiftKey && event.altKey && event.key === "Enter") {
                     range.selectNodeContents(linkRefElement);
                     range.collapse(false);
                     setSelectionFocus(range);
@@ -474,6 +488,44 @@ export const highlightToolbar = (vditor: IVditor) => {
             vditor.wysiwyg.popover.insertAdjacentElement("beforeend", inputWrap);
             vditor.wysiwyg.popover.insertAdjacentElement("beforeend", input1Wrap);
             setPopoverPosition(vditor, linkRefElement);
+        }
+
+        // footnote popover
+        const footnotesRefElement = hasClosestByAttribute(typeElement, "data-type", "footnotes-ref");
+        if (footnotesRefElement) {
+            vditor.wysiwyg.popover.innerHTML = "";
+
+            const inputWrap = document.createElement("span");
+            inputWrap.setAttribute("aria-label", i18n[vditor.options.lang].footnoteRef +
+                "<" + updateHotkeyTip("⌥-Enter") + ">");
+            inputWrap.className = "vditor-tooltipped vditor-tooltipped__n";
+            const input = document.createElement("input");
+            inputWrap.appendChild(input);
+            input.className = "vditor-input";
+            input.setAttribute("placeholder", i18n[vditor.options.lang].footnoteRef + "<" + updateHotkeyTip("⌥-Enter") + ">");
+            input.style.width = "120px";
+            input.value = footnotesRefElement.getAttribute("data-footnotes-label");
+            input.oninput = () => {
+                if (input.value.trim() !== "") {
+                    footnotesRefElement.setAttribute("data-footnotes-label", input.value);
+                }
+            };
+            input.onkeydown = (event) => {
+                if (event.isComposing) {
+                    return;
+                }
+                if (!isCtrl(event) && !event.shiftKey && event.altKey && event.key === "Enter") {
+                    range.selectNodeContents(footnotesRefElement);
+                    range.collapse(false);
+                    setSelectionFocus(range);
+                    event.preventDefault();
+                }
+            };
+
+            const close = genClose(vditor.wysiwyg.popover, footnotesRefElement, vditor);
+            vditor.wysiwyg.popover.insertAdjacentElement("beforeend", close);
+            vditor.wysiwyg.popover.insertAdjacentElement("beforeend", inputWrap);
+            setPopoverPosition(vditor, footnotesRefElement);
         }
 
         // img popover
@@ -577,7 +629,7 @@ export const highlightToolbar = (vditor: IVditor) => {
                         codeElement.className = `language-${language.value}`;
                     };
                     language.className = "vditor-input";
-                    language.setAttribute("placeholder", i18n[vditor.options.lang].language);
+                    language.setAttribute("placeholder", i18n[vditor.options.lang].language + "<" + updateHotkeyTip("⌥-Enter") + ">");
                     language.value = codeElement.className.indexOf("language-") > -1 ?
                         codeElement.className.split("-")[1].split(" ")[0] : "";
                     language.oninput = () => {
@@ -605,8 +657,44 @@ export const highlightToolbar = (vditor: IVditor) => {
             });
         }
 
+        let headingElement = hasClosestByTag(typeElement, "H") as HTMLElement;
+        if (headingElement && headingElement.tagName.length === 2) {
+            vditor.wysiwyg.popover.innerHTML = "";
+
+            const inputWrap = document.createElement("span");
+            inputWrap.setAttribute("aria-label", "ID" + "<" + updateHotkeyTip("⌥-Enter") + ">");
+            inputWrap.className = "vditor-tooltipped vditor-tooltipped__n";
+            const input = document.createElement("input");
+            inputWrap.appendChild(input);
+            input.className = "vditor-input";
+            input.setAttribute("placeholder", "ID" + "<" + updateHotkeyTip("⌥-Enter") + ">");
+            input.style.width = "120px";
+            input.value = headingElement.getAttribute("data-id") || "";
+            input.oninput = () => {
+                headingElement.setAttribute("data-id", input.value);
+            };
+            input.onkeydown = (event) => {
+                if (event.isComposing) {
+                    return;
+                }
+                if (!isCtrl(event) && !event.shiftKey && event.altKey && event.key === "Enter") {
+                    range.selectNodeContents(headingElement);
+                    range.collapse(false);
+                    setSelectionFocus(range);
+                    event.preventDefault();
+                }
+            };
+
+            const close = genClose(vditor.wysiwyg.popover, headingElement, vditor);
+            vditor.wysiwyg.popover.insertAdjacentElement("beforeend", close);
+            vditor.wysiwyg.popover.insertAdjacentElement("beforeend", inputWrap);
+            setPopoverPosition(vditor, headingElement);
+        } else {
+            headingElement = undefined;
+        }
+
         if (!blockquoteElement && !imgElement && !topListElement && !tableElement && !blockRenderElement && !aElement
-            && !linkRefElement) {
+            && !linkRefElement && !footnotesRefElement && !headingElement) {
             vditor.wysiwyg.popover.style.display = "none";
         }
 
@@ -705,7 +793,7 @@ export const genAPopover = (vditor: IVditor, aElement: HTMLElement) => {
             event.preventDefault();
             return;
         }
-        if (event.altKey && event.key === "Enter") {
+        if (!isCtrl(event) && !event.shiftKey && event.altKey && event.key === "Enter") {
             const range = vditor.wysiwyg.element.ownerDocument.createRange();
             // firefox 不会打断 link https://github.com/Vanessa219/vditor/issues/193
             aElement.insertAdjacentHTML("afterend", Constants.ZWSP);

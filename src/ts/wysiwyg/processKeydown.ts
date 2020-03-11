@@ -437,7 +437,7 @@ export const processKeydown = (vditor: IVditor, event: KeyboardEvent) => {
 
     // h1-h6
     const headingElement = hasClosestByTag(startContainer, "H");
-    if (headingElement) {
+    if (headingElement && headingElement.tagName.length === 2) {
         if (headingElement.tagName === "H6" && startContainer.textContent.length === range.startOffset &&
             !isCtrl(event) && !event.shiftKey && !event.altKey && event.key === "Enter") {
             // enter: H6 回车解析问题 https://github.com/Vanessa219/vditor/issues/48
@@ -617,10 +617,15 @@ export const processKeydown = (vditor: IVditor, event: KeyboardEvent) => {
                                 }
                             }
                         });
+                        const parentTagName = taskItemElement.parentElement.tagName;
+                        const dataMarker = taskItemElement.parentElement.tagName === "OL" ? "" : ` data-marker="${taskItemElement.parentElement.getAttribute("data-marker")}"`;
+                        let startAttribute = "";
                         if (beforeHTML) {
-                            beforeHTML = `<ul data-tight="true" data-marker="*" data-block="0">${beforeHTML}</ul>`;
+                            startAttribute = taskItemElement.parentElement.tagName === "UL" ? "" : ` start="1"`;
+                            beforeHTML = `<${parentTagName} data-tight="true"${dataMarker} data-block="0">${beforeHTML}</${parentTagName}>`;
                         }
-                        taskItemElement.parentElement.outerHTML = `${beforeHTML}<p data-block="0">\n<wbr></p><ul data-tight="true" data-marker="*" data-block="0">${afterHTML}</ul>`;
+                        taskItemElement.parentElement.outerHTML = `${beforeHTML}<p data-block="0">\n<wbr></p><${parentTagName}
+ data-tight="true"${dataMarker} data-block="0"${startAttribute}>${afterHTML}</${parentTagName}>`;
                     } else {
                         // 任务列表下方无任务列表元素
                         taskItemElement.parentElement.insertAdjacentHTML("afterend", `<p data-block="0">\n<wbr></p>`);
@@ -640,7 +645,7 @@ export const processKeydown = (vditor: IVditor, event: KeyboardEvent) => {
             } else {
                 // 当前任务列表有文字，光标后的文字需添加到新任务列表中
                 range.setEndAfter(taskItemElement.lastChild);
-                taskItemElement.insertAdjacentHTML("afterend", `<li class="vditor-task" data-marker="*"><input type="checkbox"> <wbr></li>`);
+                taskItemElement.insertAdjacentHTML("afterend", `<li class="vditor-task" data-marker="${taskItemElement.getAttribute("data-marker")}"><input type="checkbox"> <wbr></li>`);
                 document.querySelector("wbr").after(range.extractContents());
             }
             setRangeByWbr(vditor.wysiwyg.element, range);
@@ -653,17 +658,11 @@ export const processKeydown = (vditor: IVditor, event: KeyboardEvent) => {
 
     // alt+enter
     if (event.altKey && event.key === "Enter" && !isCtrl(event) && !event.shiftKey) {
-        // a popover 中 input 和 a 切换
-        const aElement = hasClosestByTag(startContainer, "A");
-        if (aElement) {
-            const inputElement = vditor.wysiwyg.popover.querySelector("input");
-            inputElement.focus();
-            inputElement.select();
-        }
-
-        // 链接引用 popover 中 input 和元素切换
+        // 切换到链接、链接引用、脚注引用弹出的输入框中
+        const aElement = hasClosestByMatchTag(startContainer, "A");
         const linRefElement = hasClosestByAttribute(startContainer, "data-type", "link-ref");
-        if (linRefElement) {
+        const footnoteRefElement = hasClosestByAttribute(startContainer, "data-type", "footnotes-ref");
+        if (aElement || linRefElement || footnoteRefElement || (headingElement && headingElement.tagName.length === 2)) {
             const inputElement = vditor.wysiwyg.popover.querySelector("input");
             inputElement.focus();
             inputElement.select();

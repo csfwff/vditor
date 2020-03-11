@@ -12,6 +12,7 @@ export class Options {
         counter: 0,
         debugger: false,
         height: "auto",
+        hideToolbar: false,
         hint: {
             delay: 200,
             emoji: {
@@ -41,10 +42,11 @@ export class Options {
                 style: "github",
             },
             markdown: {
-                autoSpace: true,
-                chinesePunct: true,
-                fixTermTypo: true,
-                toc: true,
+                autoSpace: false,
+                chinesePunct: false,
+                fixTermTypo: false,
+                footnotes: true,
+                toc: false,
             },
             math: {
                 engine: "KaTeX",

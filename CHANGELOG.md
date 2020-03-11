@@ -2,6 +2,13 @@
 
 ### 升级
 
+* v2.2
+  * 移除 `IPreviewOptions` 中的 `className`
+  * `insertValue` 添加 `render` 参数，以便配置是否需要进行 Markdown 处理
+  * 将异步方法变为同步
+  * 引用快捷键修改为 <kbd>Ctrl-;</kbd>
+  * 移除 index-preview.html, index-preview.js 文件
+  * `options.preview.markdown.autoSpace/chinesePunct/fixTermTypo` 默认值设置为 `false`
 * v2.1
   * 添加 options.upload.file 方法
   * options.preview 修改，支持 MathJax 配置
@@ -42,17 +49,16 @@
 
 * [open issues](https://github.com/Vanessa219/vditor/issues)
 
-### v2.2.19 / 未发布
+### v2.2.19 / 2020-03-10
 
+* [214](https://github.com/Vanessa219/vditor/issues/214) wysiwyg heading id `引入特性`
+* [206](https://github.com/Vanessa219/vditor/issues/206) combined blockquote and lists (windows firefox) `修复缺陷`
+* [151](https://github.com/Vanessa219/vditor/issues/151) 支持隐藏编辑器工具栏 `引入特性`
 * [121](https://github.com/Vanessa219/vditor/issues/121) 所见即所得模式支持 [ToC] `引入特性`
 * [119](https://github.com/Vanessa219/vditor/issues/119) 所见即所得模式支持脚注 `引入特性`
 * [55](https://github.com/Vanessa219/vditor/issues/55) 所见即所得模式支持链接引用定义`引入特性`
-
-### v2.2.18 / 2020-03-05
-
 * [209](https://github.com/Vanessa219/vditor/pull/209) 支持 Graphviz `引入特性`
 * [207](https://github.com/Vanessa219/vditor/issues/207) heading at first time(windows firefox) `修复缺陷`
-* [206](https://github.com/Vanessa219/vditor/issues/206) combined blockquote and lists (windows firefox) `修复缺陷`
 * [205](https://github.com/Vanessa219/vditor/issues/205) not working typewrite mode (windows firefox) `修复缺陷`
 * [204](https://github.com/Vanessa219/vditor/issues/204) Empty Enter in Firefox `修复缺陷`
 * [203](https://github.com/Vanessa219/vditor/issues/203) when cache:false, use cache `修复缺陷`
@@ -119,13 +125,16 @@
 * [127](https://github.com/Vanessa219/vditor/issues/127) more keyboard shortcut after ctrl+h `改进功能`
 * [125](https://github.com/Vanessa219/vditor/issues/125) ctrl+l, ** `修复缺陷`
 * 文档更新
-  * 移除 IPreviewOptions 中的 className 并添加 theme
-  * insertValue 添加 render 参数
-  * 移除异步方法
-  * 引用快捷键修改
+  * 移除 `IPreviewOptions` 中的 `className`
+  * 为 `IPreviewOptions` 添加 `theme` 选项
+  * `insertValue` 添加 `render` 参数，以便配置是否需要进行 Markdown 处理
+  * 将异步方法变为同步
+  * 引用快捷键修改为 <kbd>Ctrl-;</kbd>
   * 移除 index-preview.html, index-preview.js 文件
-  * 添加 graphvizRender
-  * 添加 option.preview.markdown.toc
+  * 添加 `graphvizRender` 方法
+  * 添加 `option.preview.markdown.toc/footnotes` 配置选项
+  * 添加 `option.hideToolbar` 配置选项
+  * `options.preview.markdown.autoSpace/chinesePunct/fixTermTypo` 默认值设置为 `false`
 
 ### v2.1.15 / 2020-02-09
 

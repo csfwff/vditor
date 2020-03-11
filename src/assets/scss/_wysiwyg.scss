@@ -99,7 +99,10 @@
   h4:before,
   h5:before,
   h6:before,
-  div.vditor-wysiwyg__block:before {
+  div.vditor-wysiwyg__block:before,
+  div[data-type="link-ref-defs-block"]:before,
+  div[data-type="footnotes-block"]:before,
+  .vditor-toc:before {
     float: left;
     padding-right: 4px;
     margin-left: -29px;
@@ -130,16 +133,26 @@
     content: 'h6';
   }
 
+  div[data-type="link-ref-defs-block"]:before {
+    content: '"A"';
+  }
+
+  div[data-type="footnotes-block"]:before {
+    content: '^F';
+  }
+
+  div.vditor-wysiwyg__block:before {
+    content: "</>";
+  }
+
+  .vditor-toc:before {
+    content: "ToC";
+  }
+
   hr {
     display: inline-block;
     margin: 12px 0;
     width: 100%;
-  }
-
-  div.vditor-wysiwyg__block {
-    &:before {
-      content: "</>";
-    }
   }
 
   details {
@@ -151,12 +164,23 @@
     color: var(--second-color);
   }
 
-  span[data-type="link-ref"] {
+  span[data-type="link-ref"],
+  sup[data-type="footnotes-ref"] {
     color: $blurColor;
   }
 
   span[data-type="toc-h"] {
     color: $blurColor;
     text-decoration: underline;
+  }
+
+  div[data-type="footnotes-block"] {
+    border-top: 2px solid var(--heading-border-color);
+    padding-top: 24px;
+    margin-top: 24px;
+  }
+
+  div[data-type="link-ref-defs-block"] {
+    color: var(--blockquote-color);
   }
 }
