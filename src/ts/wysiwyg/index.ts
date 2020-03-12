@@ -16,7 +16,7 @@ import {getRenderElementNextNode, modifyPre} from "./inlineTag";
 import {input} from "./input";
 import {insertHTML} from "./insertHTML";
 import {processCodeRender, showCode} from "./processCodeRender";
-import {isHeadingMD, isHrMD, isToC} from "./processMD";
+import {isHeadingMD, isHrMD, isToC, renderToc} from "./processMD";
 import {setRangeByWbr} from "./setRangeByWbr";
 
 class WYSIWYG {
@@ -59,8 +59,6 @@ class WYSIWYG {
             element = this.element;
         }
 
-        addP2Li(vditor.wysiwyg.element);
-
         const isWYSIWYGElement = element.isEqualNode(this.element);
 
         if (!isWYSIWYGElement) {
@@ -70,6 +68,7 @@ class WYSIWYG {
                 element = footnoteElement;
             }
 
+            addP2Li(element);
             html = element.outerHTML;
 
             if (element.tagName === "UL" || element.tagName === "OL") {
@@ -77,10 +76,12 @@ class WYSIWYG {
                 const listPrevElement = element.previousElementSibling;
                 const listNextElement = element.nextElementSibling;
                 if (listPrevElement && (listPrevElement.tagName === "UL" || listPrevElement.tagName === "OL")) {
+                    addP2Li(listPrevElement);
                     html = listPrevElement.outerHTML + html;
                     listPrevElement.remove();
                 }
                 if (listNextElement && (listNextElement.tagName === "UL" || listNextElement.tagName === "OL")) {
+                    addP2Li(listNextElement);
                     html = html + listNextElement.outerHTML;
                     listNextElement.remove();
                 }
@@ -97,10 +98,12 @@ class WYSIWYG {
             // 添加脚注
             const allFootnoteElement = this.element.querySelector("[data-type='footnotes-block']");
             if (allFootnoteElement && !element.isEqualNode(allFootnoteElement)) {
+                addP2Li(allFootnoteElement)
                 html += allFootnoteElement.outerHTML;
                 allFootnoteElement.remove();
             }
         } else {
+            addP2Li(vditor.wysiwyg.element);
             html = element.innerHTML;
         }
 
@@ -129,6 +132,7 @@ class WYSIWYG {
                 this.element.insertAdjacentElement("beforeend", allFootnoteElement);
             }
         }
+        return element;
     }
 
     private bindEvent(vditor: IVditor) {
@@ -150,8 +154,8 @@ class WYSIWYG {
             if (this.popover.style.display !== "block") {
                 return;
             }
-            this.popover.style.top = Math.max(-11,
-                parseInt(this.popover.getAttribute("data-top"), 10) - vditor.wysiwyg.element.scrollTop) + "px";
+            const top = parseInt(this.popover.getAttribute("data-top"), 10) - vditor.wysiwyg.element.scrollTop;
+            this.popover.style.top = Math.max(-11, Math.min(top, this.element.clientHeight - 21)) + "px";
         });
 
         this.element.addEventListener("copy", (event: ClipboardEvent & { target: HTMLElement }) => {
@@ -302,21 +306,22 @@ class WYSIWYG {
         });
 
         // 中文处理
-        this.element.addEventListener("compositionstart", (event: IHTMLInputEvent) => {
+        this.element.addEventListener("compositionstart", (event: InputEvent) => {
             this.composingLock = true;
         });
 
-        this.element.addEventListener("compositionend", (event: IHTMLInputEvent) => {
+        this.element.addEventListener("compositionend", (event: InputEvent) => {
             const blockElement = hasClosestBlock(getSelection().getRangeAt(0).startContainer);
             if (blockElement && blockElement.tagName.indexOf("H") === 0 && blockElement.textContent === ""
                 && blockElement.tagName.length === 2) {
                 // heading 为空删除 https://github.com/Vanessa219/vditor/issues/150
+                renderToc(this.element);
                 return;
             }
             input(vditor, getSelection().getRangeAt(0).cloneRange(), event);
         });
 
-        this.element.addEventListener("input", (event: IHTMLInputEvent) => {
+        this.element.addEventListener("input", (event: InputEvent) => {
             if (this.preventInput) {
                 this.preventInput = false;
                 return;
@@ -364,6 +369,7 @@ class WYSIWYG {
             if (blockElement.tagName.indexOf("H") === 0 && blockElement.textContent === ""
                 && blockElement.tagName.length === 2) {
                 // heading 为空删除 https://github.com/Vanessa219/vditor/issues/150
+                renderToc(this.element);
                 return;
             }
 

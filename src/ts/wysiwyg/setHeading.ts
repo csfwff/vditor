@@ -1,4 +1,5 @@
 import {hasClosestBlock} from "../util/hasClosest";
+import {renderToc} from "./processMD";
 import {setRangeByWbr} from "./setRangeByWbr";
 
 export const setHeading = (vditor: IVditor, tagName: string) => {
@@ -23,6 +24,7 @@ export const setHeading = (vditor: IVditor, tagName: string) => {
             blockElement.outerHTML = `<${tagName} data-block="0">${blockElement.innerHTML.trim()}</${tagName}>`;
         }
         setRangeByWbr(vditor.wysiwyg.element, range);
+        renderToc(vditor.wysiwyg.element);
     }
 };
 

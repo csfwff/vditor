@@ -12,7 +12,7 @@ interface ILuteRender {
                 Type: number,
             },
         }
-    }, entering: boolean) => [string, number];
+    },               entering: boolean) => [string, number];
 }
 
 interface ILute {
@@ -327,6 +327,6 @@ interface IVditor {
         hlToolbarTimeoutId: number,
         preventInput: boolean,
         composingLock: boolean,
-        spinVditorDOM(vditor: IVditor, element: HTMLElement): void,
+        spinVditorDOM(vditor: IVditor, element: HTMLElement): HTMLElement,
     };
 }
