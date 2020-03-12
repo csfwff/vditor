@@ -426,6 +426,10 @@ class Vditor {
         return this.vditor.currentMode;
     }
 
+    // public setPlaceholder(placeholder: string){
+    //     this.vditor.options.placeholder = placeholder;
+    // }
+
 }
 
 export default Vditor;
